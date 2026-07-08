@@ -19,6 +19,28 @@ app.get("/api/resources", (req, res) => {
     });
 });
 
+app.post("/api/resources", (req, res) => {
+    
+    const {title, description} = req.body; // gets the title and description from the request body
+
+    if (!title || !description) { // if either title or description is missing
+        return res.status(400).json({
+            error: "Title and description are required."
+        });
+    }
+
+    const newResource = { // creates a new resource object with the provided title and description
+        id: Date.now(),
+        title,
+        description
+    };
+    resources.push(newResource);
+
+    res.status(201).json({
+        data: newResource
+    });
+});
+
 app.get("/api/resources/:id", (req, res) => { // creates a GET endpoint for the /api/resources route
     const targetId = req.params.id; // gets the id parameter from the request
     const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
