@@ -1,0 +1,28 @@
+{
+  "name": "cosc-assignment5",
+  "version": "1.0.0",
+  "description": "Assignment 5",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oxxtazxxo/cosc-assignment5.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/oxxtazxxo/cosc-assignment5/issues"
+  },
+  "homepage": "https://github.com/oxxtazxxo/cosc-assignment5#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
