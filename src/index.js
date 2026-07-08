@@ -1,9 +1,11 @@
 import express from "express"; // imports the express library
+import { logger } from "./middleware/logger.js";
 
 const app = express(); // creates the Express application
 const PORT = 3000; // tells the server to listen on port 3000
 
 app.use(express.json()); // allows the server to parse JSON data in requests
+app.use(logger);
 
 let resources = [ // creates a sample resource array with one object
     {
