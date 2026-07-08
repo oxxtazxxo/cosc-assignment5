@@ -47,6 +47,12 @@ app.put("/api/resources/:id", (req, res) => { // creates a PUT endpoint for the 
 
     const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
 
+    if (!match) {
+    return res.status(404).json({
+        error: `Resource with ID ${targetId} not found.`
+    });
+}
+
     if (title) { // if a new title is provided
         match.title = title; // updates the title of the matching resource
     }
@@ -57,6 +63,25 @@ app.put("/api/resources/:id", (req, res) => { // creates a PUT endpoint for the 
         data:match
     });
 });
+
+app.delete("/api/resources/:id", (req, res) => { // creates a DELETE endpoint for the /api/resources route
+
+    const targetId = req.params.id; // gets the id parameter from the request
+    const index = resources.findIndex( // finds the index of the resource with the matching id
+        resource => resource.id.toString() === targetId
+    );
+    if (index === -1){ // if no matching resource is found
+        return res.status(404).json({ // sends a 404 response with an error message
+            error: `Resource with ID ${targetId} not found.`
+        });
+    }
+    const deletedResource = resources.splice(index, 1); // removes the resource from the array and stores it in a variable
+
+    res.status(200).json({ // sends a 200 response with the deleted resource data
+        data: deletedResource[0]
+    });
+});
+
 app.get("/api/resources/:id", (req, res) => { // creates a GET endpoint for the /api/resources route
     const targetId = req.params.id; // gets the id parameter from the request
     const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
