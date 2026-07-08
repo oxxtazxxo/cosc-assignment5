@@ -41,6 +41,22 @@ app.post("/api/resources", (req, res) => {
     });
 });
 
+app.put("/api/resources/:id", (req, res) => { // creates a PUT endpoint for the /api/resources route
+    const targetId = req.params.id; // gets the id parameter from the request
+    const { title, description } = req.body; // gets the title and description from the request body
+
+    const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
+
+    if (title) { // if a new title is provided
+        match.title = title; // updates the title of the matching resource
+    }
+    if (description) { // if a new description is provided
+        match.description = description; // updates the description of the matching resource
+    }
+    res.status(200).json({ // sends a 200 response with the updated resource data
+        data:match
+    });
+});
 app.get("/api/resources/:id", (req, res) => { // creates a GET endpoint for the /api/resources route
     const targetId = req.params.id; // gets the id parameter from the request
     const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
