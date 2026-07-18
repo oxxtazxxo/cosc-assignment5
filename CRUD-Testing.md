@@ -1,0 +1,5 @@
+![POST](post.png)
+![GET](get-all.png)
+![GET BY ID](get-by-id.png)
+![PUT](put.png)
+![DELETE](delete.png)
