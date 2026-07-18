@@ -1,106 +1,167 @@
 import express from "express"; // imports the express library
 import { logger } from "./middleware/logger.js";
+import { connectDB } from "./database.js";
+import { ObjectId } from "mongodb";
 
 const app = express(); // creates the Express application
 const PORT = 3000; // tells the server to listen on port 3000
+const db = await connectDB();
+const resourcesCollection = db.collection("resources");
 
 app.use(express.json()); // allows the server to parse JSON data in requests
 app.use(logger);
 
-let resources = [ // creates a sample resource array with one object
-    {
-        id: 1,
-        title: "Sample Resource",
-        description: "This is the first REST resource."
-    }
-];
+app.get("/api/resources", async (req, res) => {
+    try {
+        const resources = await resourcesCollection.find().toArray();
 
-app.get("/api/resources", (req, res) => {
-    res.status(200).json({
-        data: resources
-    });
+        res.status(200).json({
+            data: resources
+        });
+    } catch (error) {
+        console.error("Error retrieving resources:", error);
+
+        res.status(500).json({
+            error: "Unable to retrieve resources."
+        });
+    }
 });
 
-app.post("/api/resources", (req, res) => {
-    
-    const {title, description} = req.body; // gets the title and description from the request body
+app.post("/api/resources", async (req, res) => {
 
-    if (!title || !description) { // if either title or description is missing
+    const { title, description } = req.body;
+
+    if (!title || !description) {
         return res.status(400).json({
             error: "Title and description are required."
         });
     }
 
-    const newResource = { // creates a new resource object with the provided title and description
-        id: Date.now(),
-        title,
-        description
-    };
-    resources.push(newResource);
+    try {
+        const newResource = {
+            title,
+            description
+        };
 
-    res.status(201).json({
-        data: newResource
-    });
-});
+        const result = await resourcesCollection.insertOne(newResource);
 
-app.put("/api/resources/:id", (req, res) => { // creates a PUT endpoint for the /api/resources route
-    const targetId = req.params.id; // gets the id parameter from the request
-    const { title, description } = req.body; // gets the title and description from the request body
+        res.status(201).json({
+            data: {
+                _id: result.insertedId,
+                ...newResource
+            }
+        });
+    } catch (error) {
+        console.error("Error creating resource:", error);
 
-    const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
-
-    if (!match) {
-    return res.status(404).json({
-        error: `Resource with ID ${targetId} not found.`
-    });
-}
-
-    if (title) { // if a new title is provided
-        match.title = title; // updates the title of the matching resource
-    }
-    if (description) { // if a new description is provided
-        match.description = description; // updates the description of the matching resource
-    }
-    res.status(200).json({ // sends a 200 response with the updated resource data
-        data:match
-    });
-});
-
-app.delete("/api/resources/:id", (req, res) => { // creates a DELETE endpoint for the /api/resources route
-
-    const targetId = req.params.id; // gets the id parameter from the request
-    const index = resources.findIndex( // finds the index of the resource with the matching id
-        resource => resource.id.toString() === targetId
-    );
-    if (index === -1){ // if no matching resource is found
-        return res.status(404).json({ // sends a 404 response with an error message
-            error: `Resource with ID ${targetId} not found.`
+        res.status(500).json({
+            error: "Unable to create resource."
         });
     }
-    const deletedResource = resources.splice(index, 1); // removes the resource from the array and stores it in a variable
-
-    res.status(200).json({ // sends a 200 response with the deleted resource data
-        data: deletedResource[0]
-    });
 });
 
-app.get("/api/resources/:id", (req, res) => { // creates a GET endpoint for the /api/resources route
-    const targetId = req.params.id; // gets the id parameter from the request
-    const match = resources.find(resource => resource.id.toString() === targetId); // finds the resource with the matching id
+app.put("/api/resources/:id", async (req, res) => {
+    const { title, description } = req.body;
 
-    if (!match) { // if no matching resource is found
-        return res.status(404).json({ // sends a 404 response with an error message
-            error: `Resource with ID ${targetId} not found.`
+    const updates = {};
+
+    if (title) {
+        updates.title = title;
+    }
+
+    if (description) {
+        updates.description = description;
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return res.status(400).json({
+            error: "At least one field is required for the update."
         });
     }
 
-    res.status(200).json({ // sends a 200 response with the matching resource data
-        data: match
-    });
+    try {
+        const result = await resourcesCollection.findOneAndUpdate(
+            {
+                _id: new ObjectId(req.params.id)
+            },
+            {
+                $set: updates
+            },
+            {
+                returnDocument: "after"
+            }
+        );
+
+        if (!result) {
+            return res.status(404).json({
+                error: "Resource not found."
+            });
+        }
+
+        res.status(200).json({
+            data: result
+        });
+    } catch (error) {
+        console.error("Error updating resource:", error);
+
+        res.status(500).json({
+            error: "Unable to update resource."
+        });
+    }
+});
+
+app.delete("/api/resources/:id", async (req, res) => {
+    try {
+        const result = await resourcesCollection.findOneAndDelete({
+            _id: new ObjectId(req.params.id)
+        });
+
+        if (!result) {
+            return res.status(404).json({
+                error: "Resource not found."
+            });
+        }
+
+        res.status(200).json({
+            data: result
+        });
+
+    } catch (error) {
+        console.error("Error deleting resource:", error);
+
+        res.status(500).json({
+            error: "Unable to delete resource."
+        });
+    }
+});
+
+app.get("/api/resources/:id", async (req, res) => {
+    try {
+        const resource = await resourcesCollection.findOne({
+            _id: new ObjectId(req.params.id)
+        });
+
+        if (!resource) {
+            return res.status(404).json({
+                error: "Resource not found."
+            });
+        }
+
+        res.status(200).json({
+            data: resource
+        });
+
+    } catch (error) {
+        console.error("Error retrieving resource:", error);
+
+        res.status(500).json({
+            error: "Unable to retrieve resource."
+        });
+    }
 });
 
 app.get("/", (req, res) => {
-  res.send("Assignment 5 server is running!"); // sends a response to the client when they access the root route
+  res.send("Assignment 6 server is running!"); // sends a response to the client when they access the root route
 });
 
 app.listen(PORT, () => {
